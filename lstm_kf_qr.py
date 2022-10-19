@@ -1,13 +1,9 @@
-#!/usr/bin/env python3
-
-# ******************************************    Libraries to be imported    ****************************************** #
 import tensorflow as tf
 from tensorflow.contrib.layers import xavier_initializer
 from kalman_tf import KalmanTF
 from lstm import VanillaLstm
 
 
-# ******************************************    Class Declaration Start     ****************************************** #
 class LSTM_KF(object):
     """
     LayerTemplate Class.
@@ -127,7 +123,7 @@ class LSTM_KF(object):
                     s_t_q = tf.multiply(tf.tanh(c_t_q), o_t_q)
 
                 with tf.variable_scope("Output_LSTM_Q"):
-                    y_t_q = tf.add(tf.matmul(tf.reshape(s_t_q, [-1, self._num_hid]), self._VQ_py), self._bQ_y)
+                    y_t_q = tf.add(tf.matmul(s_t_q, self._VQ_py), self._bQ_y)
 
                 q_t = tf.matrix_diag(y_t_q)
 
@@ -141,11 +137,10 @@ class LSTM_KF(object):
                 p_hat_t = self._kalman_filter.get_updated_covariance()
 
             with tf.variable_scope("LSTM_KF_Output"):
-                self._y_state = tf.transpose(y_hat_t)
-                self._P_state = tf.reshape(p_hat_t, [1, self._num_out * self._num_out])
+                self._y_state = y_hat_t
+                self._P_state = p_hat_t
 
-                c_s_y_p_r_q_t = tf.concat([c_t_q, s_t_q, c_t_r, s_t_r, self._y_state, self._P_state, l_t_r, l_t_q],
-                                          axis=1)
+                c_s_y_p_r_q_t = tf.concat([c_t_q, s_t_q, c_t_r, s_t_r, self._y_state, self._P_state, r_t, q_t], axis=1)
 
             return c_s_y_p_r_q_t
 
