@@ -13,9 +13,7 @@ class KalmanTF(object):
         self._batch_size = batch_size
 
         # Initial state (location and velocity) [[pos_x], [pos_y], [vel_x], [vel_y]]
-        self._state = tf.expand_dims(tf.constant(np.zeros([self._kf_state_size, 1],
-                                     dtype=np.float32), dtype=tf.float32), axis=0)
-        self._state = tf.tile(self._state, tf.constant([batch_size, 1, 1], dtype=tf.int32))
+        self._init_state = tf.constant(np.zeros([self._kf_state_size, 1], dtype=np.float32), dtype=tf.float32)
 
         # Known external motion vector
         self._ext_motion = tf.constant(np.zeros([self._kf_state_size, self._batch_size], dtype=np.float32))
