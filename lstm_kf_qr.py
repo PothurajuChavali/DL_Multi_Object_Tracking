@@ -1,7 +1,7 @@
 import tensorflow as tf
 from tensorflow.contrib.layers import xavier_initializer
 from kalman_tf import KalmanTF
-from lstm import VanillaLstm
+from lstm import Lstm
 
 
 class LSTM_KF(object):
