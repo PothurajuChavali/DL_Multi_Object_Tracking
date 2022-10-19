@@ -14,7 +14,7 @@ class LSTM_KF(object):
     Implements the Neural Network / Tensorflow Compute Graph Definition.
     """
 
-    def __init__(self, features, num_in=2, num_hid=10, num_out=2, batch_size=1, nn_scope='lstm_kf'):
+    def __init__(self, features, num_in, num_hid, num_out, batch_size):
         """
         Constructor of the LayerTemplate Class.
 
@@ -22,8 +22,6 @@ class LSTM_KF(object):
         :param int num_out: Number of neurons in the Logits Layer.
         :param str nn_scope: String representing the variable used for creating the Layer.
         """
-
-        self._nn_scope = nn_scope
 
         with tf.variable_scope(self._nn_scope):
             self._features = features
@@ -35,9 +33,9 @@ class LSTM_KF(object):
             self._kalman_filter = KalmanTF(kf_num_in=num_in, kf_num_out=num_out, dt=dt, batch_size=batch_size)
 
             with tf.variable_scope("RNNWeightsR"):
-                self.lstm_R = VanillaLstm(self._features, self._num_hid)
+                self.lstm_R = Lstm(self._features, self._num_hid)
             with tf.variable_scope("RNNWeightsQ"):
-                self.lstm_Q = VanillaLstm(self._features, self._num_hid)
+                self.lstm_Q = Lstm(self._features, self._num_hid)
 
             with tf.name_scope("Init_State"):
                 self._init_memory = tf.zeros(shape=[self._batch_size, self._num_hid], dtype=tf.float32)
@@ -98,11 +96,9 @@ class LSTM_KF(object):
                     s_t_r = tf.multiply(tf.tanh(c_t_r), o_t_r)
 
                 with tf.variable_scope("Output_LSTM_R"):
-                    y_t_r = tf.add(tf.matmul(tf.reshape(s_t_r, [-1, self._num_hid]), self._VR_py), self._bR_y)
+                    y_t_r = tf.add(tf.matmul(s_t_r, self._VR_py), self._bR_y)
 
-                r_t = tf.matrix_diag(l_t_r)
-        
-                l_t_r = tf.reshape(tf.diag_part(r_t), [1, self._num_in])
+                r_t = tf.matrix_diag(y_t_r)
 
             with tf.variable_scope("Kalman_predict_state"):
                 self._kalman_filter.predict_state(tf.transpose(y_hat_tm1))
@@ -133,7 +129,7 @@ class LSTM_KF(object):
                 with tf.variable_scope("Output_LSTM_Q"):
                     y_t_q = tf.add(tf.matmul(tf.reshape(s_t_q, [-1, self._num_hid]), self._VQ_py), self._bQ_y)
 
-                q_t = tf.matrix_diag(l_t_q)
+                q_t = tf.matrix_diag(y_t_q)
 
             with tf.variable_scope("Kalman_predict_covariance"):
                 self._kalman_filter.predict_covarince(p_hat_tm1, q_t, y_hat_t_p)
