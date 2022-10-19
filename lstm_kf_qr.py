@@ -100,11 +100,8 @@ class LSTM_KF(object):
                 with tf.variable_scope("Output_LSTM_R"):
                     y_t_r = tf.add(tf.matmul(tf.reshape(s_t_r, [-1, self._num_hid]), self._VR_py), self._bR_y)
 
-                # l_t_r = tf.sigmoid(y_t_r)
-                l_t_r = tf.abs(y_t_r)
                 r_t = tf.matrix_diag(l_t_r)
-                r_t = tf.squeeze(r_t, [0])
-
+        
                 l_t_r = tf.reshape(tf.diag_part(r_t), [1, self._num_in])
 
             with tf.variable_scope("Kalman_predict_state"):
@@ -136,18 +133,14 @@ class LSTM_KF(object):
                 with tf.variable_scope("Output_LSTM_Q"):
                     y_t_q = tf.add(tf.matmul(tf.reshape(s_t_q, [-1, self._num_hid]), self._VQ_py), self._bQ_y)
 
-                # l_t_q = tf.sigmoid(y_t_q)
-                l_t_q = tf.abs(y_t_q)
                 q_t = tf.matrix_diag(l_t_q)
-                q_t = tf.squeeze(q_t, [0])
 
             with tf.variable_scope("Kalman_predict_covariance"):
-                self._kalman_filter.predict_covarince(tf.reshape(p_hat_tm1, [self._num_out, self._num_out]), q_t,
-                                                      y_hat_t_p)
+                self._kalman_filter.predict_covarince(p_hat_tm1, q_t, y_hat_t_p)
                 p_hat_t_p = self._kalman_filter.get_predicted_covariance()
 
             with tf.variable_scope("Kalman_update"):
-                self._kalman_filter.update(tf.transpose(y_hat_t_p), p_hat_t_p, tf.transpose(z_t, [1, 0]), r_t)
+                self._kalman_filter.update(y_hat_t_p, p_hat_t_p, z_t, r_t)
                 y_hat_t = self._kalman_filter.get_updated_state()
                 p_hat_t = self._kalman_filter.get_updated_covariance()
 
@@ -162,7 +155,7 @@ class LSTM_KF(object):
 
     def predict_sequence(self, features):
         with tf.name_scope('Sequence'):
-            c_s_y_p_r_q = tf.scan(self.recurrence, tf.transpose(features, [1, 0, 2]),
+            c_s_y_p_r_q = tf.scan(self.recurrence, features,
                                   initializer=self._init_memory_state)
 
             c_t_q, s_t_q, c_t_r, s_t_r, y_hat_t, p_hat_t, r_t, q_t = tf.split(c_s_y_p_r_q,
@@ -181,17 +174,10 @@ class LSTM_KF(object):
             memories_r = c_t_r
 
         with tf.name_scope('Output'):
-            kf_state = tf.transpose(y_hat_t, [1, 0, 2])
-            # kf_state_recon = tf.transpose(y_hat_t, [1, 0, 2])
-            kf_covariance = tf.transpose(p_hat_t, [1, 0, 2])
-            r_t = tf.transpose(r_t, [1, 0, 2])
-            q_t = tf.transpose(q_t, [1, 0, 2])
+            kf_state = y_hat_t
+            kf_covariance = p_hat_t
+            meas_noise_cov = r_t
+            process_noise_cov = q_t
 
-        return memories_r, memories_q, states_r, states_q, kf_state, kf_covariance, r_t, q_t
-
-    def get_logits(self):
-        return self._logits
-
-    def get_net_scope(self):
-        return self._nn_scope
+        return memories_r, memories_q, states_r, states_q, kf_state, kf_covariance, meas_noise_cov, process_noise_cov
 
