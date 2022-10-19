@@ -3,8 +3,8 @@
 # ******************************************    Libraries to be imported    ****************************************** #
 import tensorflow as tf
 from tensorflow.contrib.layers import xavier_initializer
-from app.mot_2d.layers.kalman_tf_2 import KalmanTF
-from app.mot_2d.layers.lstm import VanillaLstm
+from kalman_tf import KalmanTF
+from lstm import VanillaLstm
 
 
 # ******************************************    Class Declaration Start     ****************************************** #
