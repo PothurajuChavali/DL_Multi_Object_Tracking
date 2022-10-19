@@ -4,16 +4,17 @@ import tensorflow as tf
 from tensorflow.contrib.layers import xavier_initializer
 
 
-class VanillaLstm(object):
+class Lstm(object):
     """
-    Long Short-Term Memory Nerual Net Base Class
+    Long Short-Term Memory Nerual Net 
     """
+
     def __init__(self, num_in=2, num_hid=10, num_out=2, batch_size=1):
         self._num_in = num_in
         self._num_hid = num_hid
         self._num_out = num_out
         self._batch_size = batch_size
-
+        
         with tf.name_scope("Init_State"):
             self._init_memory = tf.zeros(shape=[self._batch_size, self._num_hid], dtype=tf.float32)
             self._init_state = tf.zeros(shape=[self._batch_size, self._num_hid], dtype=tf.float32)
@@ -80,22 +81,6 @@ class VanillaLstm(object):
                 s_t = tf.multiply(tf.tanh(c_t), o_t)
 
             return tf.stack([c_t, s_t])
-
-
-class Lstm(VanillaLstm):
-    """
-    Long Short-Term Memory Nerual Net with a single LSTM Cell at each recurrence step.
-    """
-
-    def __init__(self, num_in=2, num_hid=10, num_out=2, batch_size=1):
-        super().__init__(num_in=num_in, num_hid=num_hid, num_out=num_out, batch_size=batch_size)
-
-        with tf.variable_scope("RNNWeights"):
-            with tf.variable_scope("EOut"):
-                self._V_py = tf.get_variable("PStoEOut_V", shape=[self._num_hid, self._num_out], dtype=tf.float32,
-                                             initializer=xavier_initializer())
-                self._b_y = tf.get_variable("EOut_B", shape=[self._num_out], dtype=tf.float32,
-                                            initializer=xavier_initializer())
 
     def predict_sequence(self, features):
         with tf.name_scope('Sequence'):
