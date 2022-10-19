@@ -27,17 +27,9 @@ class KalmanTF(object):
         # Time step between frames
         self._dt = dt
 
-        # Next State Function (State Transition Matrix)
+        # Next State Function (State Transition Matrix based on ego motion model)
         state_fn = np.eye(self._kf_state_size, dtype=np.float32)
-        row_id = np.arange(self._kf_state_size - self._kf_meas_size)
-        col_id = np.arange(self._kf_meas_size, self._kf_state_size)
-        state_fn[row_id, col_id] = dt
-
-        row_id = np.arange(self._kf_meas_size)
-        col_id = np.arange(self._kf_meas_size * 2, self._kf_state_size)
-        state_fn[row_id, col_id] = dt*dt/2
-        # self._state_fn = tf.constant(state_fn, dtype=tf.float32)
-        self._state_fn = tf.constant(np.tile(state_fn, (self._batch_size, 1, 1)), dtype=tf.float32)
+    
 
         # Measurement function: we observe x and y but not the two velocities (Maps states to measurements)
         measurement_fn = np.zeros([self._kf_meas_size, self._kf_state_size], dtype=np.float32)
