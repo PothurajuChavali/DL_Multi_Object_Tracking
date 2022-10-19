@@ -6,7 +6,7 @@ class KalmanTF(object):
     """
     Tensorflow based Kalman Filter Base Class
     """
-    def __init__(self, kf_num_in=4, kf_num_out=8, dt=1, batch_size=1):
+    def __init__(self, kf_num_in, kf_num_out, dt, batch_size):
         # measurement and state vector sizes
         self._kf_meas_size = kf_num_in
         self._kf_state_size = kf_num_out
@@ -49,7 +49,7 @@ class KalmanTF(object):
     def predict_covarince(self, covariance, process_noise):
         # Uncertainty Covariance
         self._covariance = tf.add(tf.matmul(tf.matmul(self._state_fn, covariance),
-                                            tf.transpose(self._state_fn, [0, 2, 1])), process_noise)
+                                            self._state_fn), process_noise)
 
     def update(self, state, covariance, measurement, measurement_noise):
         # measurement error
@@ -57,7 +57,7 @@ class KalmanTF(object):
 
         # Project the system uncertainty to measurement space using measurement function and add the measurement noise
         uncertainty = tf.add(
-            tf.matmul(tf.matmul(self._measurement_fn, covariance), tf.transpose(self._measurement_fn, [0, 2, 1])),
+            tf.matmul(tf.matmul(self._measurement_fn, covariance), self._measurement_fn),
             measurement_noise)
 
         # Kalman Gain
